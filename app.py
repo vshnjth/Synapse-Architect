@@ -322,7 +322,10 @@ if trace_btn and stimulus:
 
         except Exception as e:
             st.error(f"❌ Error during neural trace: {str(e)}")
-            st.info("💡 Make sure your OPENAI_API_KEY is set in a .env file.")
+            st.info(
+                "💡 Make sure your GITHUB_TOKEN is set in "
+                ".streamlit/secrets.toml"
+            )
 
 # ─── Display Results ───
 if "result" in st.session_state:
