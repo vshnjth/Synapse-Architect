@@ -7,7 +7,7 @@ generates Mermaid.js flowcharts, and cross-checks against NCERT biology standard
 import json
 import streamlit as st
 from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import SystemMessage, UserMessage, ChatCompletionsResponseFormatJsonObject
+from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
 # --- GitHub Models API setup ---
@@ -150,7 +150,7 @@ def trace_neural_pathway(stimulus: str) -> dict:
         ],
         temperature=0.3,
         max_tokens=2000,
-        response_format=ChatCompletionsResponseFormatJsonObject(),
+        response_format={"type": "json_object"},
     )
 
     raw = response.choices[0].message.content
