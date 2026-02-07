@@ -4,15 +4,19 @@ Traces neural signal pathways from stimulus to cortex in 5 logical steps,
 generates Mermaid.js flowcharts, and cross-checks against NCERT biology standards.
 """
 
-import os
 import json
-import re
-from openai import OpenAI
-from dotenv import load_dotenv
+import streamlit as st
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage, JsonObjectFormat
+from azure.core.credentials import AzureKeyCredential
 
-load_dotenv()
+# --- GitHub Models API setup ---
+GITHUB_MODELS_ENDPOINT = "https://models.inference.ai.azure.com"
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = ChatCompletionsClient(
+    endpoint=GITHUB_MODELS_ENDPOINT,
+    credential=AzureKeyCredential(st.secrets["GITHUB_TOKEN"]),
+)
 
 NCERT_REFERENCE = {
     "receptor_types": {
@@ -132,22 +136,21 @@ def trace_neural_pathway(stimulus: str) -> dict:
     a structured neural pathway trace with 5 steps, a Mermaid chart,
     and NCERT grounding notes.
     """
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
+    response = client.complete(
+        model="gpt-4o",
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": (
+            SystemMessage(content=SYSTEM_PROMPT),
+            UserMessage(
+                content=(
                     f"Trace the complete neural signal pathway for this stimulus: "
                     f"'{stimulus}'. Provide exactly 5 steps from receptor to brain, "
                     f"a Mermaid.js flowchart, and NCERT accuracy cross-check."
-                ),
-            },
+                )
+            ),
         ],
         temperature=0.3,
         max_tokens=2000,
-        response_format={"type": "json_object"},
+        response_format=JsonObjectFormat(),
     )
 
     raw = response.choices[0].message.content
