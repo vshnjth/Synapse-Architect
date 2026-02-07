@@ -5,6 +5,7 @@ generates Mermaid.js flowcharts, and cross-checks against NCERT biology standard
 """
 
 import json
+import re
 import streamlit as st
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
@@ -101,6 +102,7 @@ from the receptor to the brain's processing center.
 {get_ncert_context()}
 
 You MUST respond with valid JSON only — no markdown, no explanation outside the JSON.
+Do NOT wrap the JSON in ```json``` code fences. Output raw JSON only.
 
 JSON schema:
 {{
@@ -130,6 +132,23 @@ Rules:
 """
 
 
+def _extract_json(text: str) -> dict:
+    """Parse JSON from the LLM response, handling markdown fences if present."""
+    # Try direct parse first
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Strip markdown ```json ... ``` fences if the model wrapped them
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if match:
+        return json.loads(match.group(1).strip())
+
+    raise ValueError("Could not parse JSON from model response")
+
+
 def trace_neural_pathway(stimulus: str) -> dict:
     """
     Main agent function: takes a stimulus string and returns
@@ -150,11 +169,10 @@ def trace_neural_pathway(stimulus: str) -> dict:
         ],
         temperature=0.3,
         max_tokens=2000,
-        response_format={"type": "json_object"},
     )
 
     raw = response.choices[0].message.content
-    result = json.loads(raw)
+    result = _extract_json(raw)
     return result
 
 
